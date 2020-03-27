@@ -1,5 +1,6 @@
+// https://zzfx.3d2k.com/
 
-export function ZzFx(
+export default function(
   volume,
   randomness,
   frequency,
