@@ -87,6 +87,6 @@ export default function odios(param, tone, time) {
       s += re * f;
     }
 
-    return s;
+    return (s * Math.sqrt(gain / (n_partials + (gain - 1.0) * s * s)));
   };
 }

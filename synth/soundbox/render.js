@@ -25,6 +25,7 @@ export default function ({
       v => 2 * (v % 1) - 1, // sawtooth
       v => { let v2 = (v % 1) * 4; return v2 < 2 ? v2 - 1 : 3 - v2 }, // triangle
     ];
+
     let OSC1_WAVEFORM;
     let OSC1_VOL;
     let OSC1_SEMI;
@@ -53,7 +54,7 @@ export default function ({
     let FX_PAN_FREQ;
     let FX_DELAY_AMT;
     let FX_DELAY_TIME;
-    
+
     let tva = [
       v => OSC1_WAVEFORM = osc[v],
       v => OSC1_VOL = v,
@@ -77,7 +78,7 @@ export default function ({
       v => FX_FILTER = v,
       v => FX_FREQ = v * 43.23529 * 3.141592 / 44100,
       v => FX_RESONANCE = 1 - v / 255,
-      v => FX_DIST = v * 0.32767,
+      v => FX_DIST = v * 0.2056,
       v => FX_DRIVE = v / 32,
       v => FX_PAN_AMT = v / 512,
       v => FX_PAN_FREQ = 6.283184 * pow(2, v - 9) / rowLen,
@@ -137,13 +138,13 @@ export default function ({
                     sample += (2 * random() - 1) * NOISE_VOL;
                   }
 
-                  noteBuf[T] = 0.00196 * sample * e;
+                  noteBuf[T] = sample * e * 1/255;
                 }
 
                 noteCache.set(note, noteBuf);
               }
 
-              for (let j = 0, i = sampleOffset * 2; j < noteBuf.length; j++ , i += 2) {
+              for (let j = 0, i = sampleOffset * 2; j < noteBuf.length; j++, i += 2) {
                 chnBuf[i] += noteBuf[j];
               }
             }
@@ -192,14 +193,13 @@ export default function ({
           }
 
           // Store in stereo channel buffer (needed for the delay effect)
-          chnBuf[k] = lsample;
-          chnBuf[k + 1] = rsample;
+          chnBuf[k] = rsample;
+          chnBuf[k + 1] = lsample;
 
           // ...and add to stereo mix buffer
-          lOut[k / 2] += lsample;
           rOut[k / 2] += rsample;
+          lOut[k / 2] += lsample;
         }
-
       }
     }
   }
