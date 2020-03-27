@@ -1,5 +1,4 @@
-
-
+// music from http://www.p01.org/OUTER_M2/
 
 export default function outerM2() {
   let u = [0];

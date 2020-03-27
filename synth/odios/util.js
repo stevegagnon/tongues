@@ -20,6 +20,6 @@ export function generate_random_data(l) {
   return random_data;
 }
 
-export function softclip(v)
-  return v * math.sqrt(gain / (1 + (gain - 1) * v * v));
-end
+export function softclip(v) {
+  return v * Math.sqrt(gain / (1 + (gain - 1) * v * v));
+}
