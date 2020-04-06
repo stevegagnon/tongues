@@ -10,8 +10,8 @@ function setParam(min, max, quan, def = 0.0) {
 
 let Waveform1 = setParam(0, 1, 6, 0);
 let Waveform2 = setParam(0, 1, 6, 0);
-let DetuneSpread1 = setParam(0, 29.00242657210449, 101, 1.4501213286f);
-let DetuneSpread2 = setParam(0, 29.00242657210449, 101, 1.4501213286f);
+let DetuneSpread1 = setParam(0, 29.00242657210449, 101, 1.4501213286);
+let DetuneSpread2 = setParam(0, 29.00242657210449, 101, 1.4501213286);
 let PitchStrength1 = setParam(-10, 10, 241, 0);
 let PitchDecay1 = setParam(7.010401204, 3.943350677253, 201, 0);
 let PitchStrength2 = setParam(-10, 10, 241, 0);
