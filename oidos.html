@@ -1,0 +1,67 @@
+<!doctype html>
+
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+</head>
+
+<body>
+  <button id="play1">play1</button>
+  <button id="play2">play2</button>
+  <button id="play3">play3</button>
+
+  <script type="module">
+    import { default_values, random_values } from './synth/oidos/util.js';
+    import oidos from './synth/oidos/synth.js';
+
+
+    const sampleRate = 44100;
+    let audioCtx;
+    let last;
+
+    document.getElementById('play1').addEventListener('click', () => {
+      last = random_values(400);
+      play(...last);
+    });
+
+    document.getElementById('play2').addEventListener('click', () => {
+      play(...last);
+    });
+
+
+    function getAudioCtx() {
+      if (!audioCtx) {
+        audioCtx = new AudioContext({ sampleRate });
+      }
+      return audioCtx;
+    }
+
+    function play(...args) {
+      console.log(args);
+
+      const gen = oidos(...args);
+      const samples = gen(44100 * 3);
+
+      console.log(samples);
+
+      const audioCtx = getAudioCtx();
+
+      const myArrayBuffer = audioCtx.createBuffer(1, samples.length, sampleRate);
+
+      const c = myArrayBuffer.getChannelData(0);
+
+      for (let i = 0; i < samples.length; ++i) {
+        c[i] = samples[i];
+      }
+
+      const source = audioCtx.createBufferSource();
+      source.buffer = myArrayBuffer;
+      source.connect(audioCtx.destination);
+      source.start();
+    }
+
+  </script>
+</body>
+
+</html>

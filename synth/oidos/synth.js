@@ -1,4 +1,4 @@
-import { generate_random_data } from './util';
+import { generate_random_data } from './util.js';
 
 const TARGET_SAMPLE_RATE = 44100.0;
 const SEMITONE_RATIO = Math.pow(2, 1 / 12);
