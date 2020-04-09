@@ -54,52 +54,52 @@ export default function render(
     p,
     c
   } of songData) {
-    const delay_time = (fx_delay_time * rowLen) >> 1
+    const len = env_attack + env_sustain + env_release;
+    const delay_time = (fx_delay_time * rowLen) >> 1;
     const delay_amt = fx_delay_amt / 255;
     const pan_freq = pow(2, fx_pan_freq - 8) / rowLen;
-    const osc1 = osc[osc1_waveform];
-    const osc2 = osc[osc2_waveform];
+    const oscillators = [
+      [osc1_oct, osc1_det, osc1_detune, osc[osc1_waveform], osc1_vol, lfo_osc1_freq, osc1_xenv],
+      [osc2_oct, osc2_det, osc2_detune, osc[osc2_waveform], osc2_vol, , osc2_xenv]
+    ];
     const lfo_freq_row = pow(2, lfo_freq - 8) / rowLen;
     const lfo = k => osc[lfo_waveform](k * lfo_freq_row) * lfo_amt / 512 + 0.5;
+    const nc = [];
 
     const render_note = (n, pos, channel_buffer) => {
-      let c1 = 0, c2 = 0;
-      const nf = (oct, det, detune) => (0.00390625 * pow(1.059463094, (n + (oct - 8) * 12 + det) - 128)) * (1 + 0.0008 * detune);
-      const o1t = nf(osc1_oct, osc1_det, osc1_detune);
-      const o2t = nf(osc2_oct, osc2_det, osc2_detune);
-      const len = env_attack + env_sustain + env_release;
+      if (!nc[n]) {
+        nc[n] = create_buffer(len);
 
-      for (let j = len - 1; j >= 0; --j) {
-        let k = j + pos;
+        const oscs = oscillators.map(([oct, det, detune, osc, osc_vol, lfo_osc_freq, osc_xenv]) => {
+          let c = 0;
+          let ot = (0.00390625 * pow(1.059463094, (n + (oct - 8) * 12 + det) - 128)) * (1 + 0.0008 * detune);
+          return (e, lfp) => {
+            let t = ot;
+            if (lfo_osc_freq) t += lfo(lfp);
+            if (osc_xenv) t *= e * e;
+            c += t;
+            return osc(c) * osc_vol;
+          }
+        });
 
-        // LFO
-        const lfor = lfo(k);
+        for (let j = len - 1; j >= 0; --j) {
+          // Envelope
+          let e = j < env_attack ? j / env_attack
+            : j >= env_attack + env_sustain ? 1 - (j - env_attack - env_sustain) / env_release
+              : 1;
 
-        // Envelope
-        let e = 1
-        if (j < env_attack) {
-          e = j / env_attack;
-        } else if (j >= env_attack + env_sustain) {
-          e -= (j - env_attack - env_sustain) / env_release;
+
+          let s = oscs.reduce((a, c) => a + c(e, j + pos), 0);
+
+          // Noise oscillator
+          if (noise_fader) s += (2 * random() - 1) * noise_fader * e;
+
+          nc[n][j] = s * e / 255;
         }
+      }
 
-        // Oscillator 1
-        let t = o1t;
-        if (lfo_osc1_freq) t += lfor;
-        if (osc1_xenv) t *= e * e;
-        c1 += t;
-        let rsample = osc1(c1) * osc1_vol;
-
-        // Oscillator 2
-        t = o2t;
-        if (osc2_xenv) t *= e * e;
-        c2 += t;
-        rsample += osc2(c2) * osc2_vol;
-
-        // Noise oscillator
-        if (noise_fader) rsample += (2 * random() - 1) * noise_fader * e;
-
-        channel_buffer[k] = rsample * e / 255;
+      for (let i = 0; i < len; ++i) {
+        channel_buffer[pos + i] += nc[n][i];
       }
     }; // render_note
 
@@ -126,12 +126,11 @@ export default function render(
     const q = fx_resonance / 255;
 
     for (let k = 0; k < sample_count; ++k) {
-      const lfor = lfo(k);
       let s = right_buffer[k];
 
       // State variable filter
       let f = fx_freq;;
-      if (lfo_fx_freq) f *= lfor;
+      if (lfo_fx_freq) f *= lfo(k);
       f = 1.5 * sin(f * 3.141592 / SAMPLE_RATE);
       low += f * band;
       const high = q * (s - band) - low;
