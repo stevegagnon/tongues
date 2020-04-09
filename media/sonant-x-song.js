@@ -1,24 +1,36 @@
 export default {
     "songLen": 37,
+    "rowLen": 5513,
+    "endPattern": 9,
     "songData": [
         {
+            "lfo_fx_freq": 1,
+            "lfo_freq": 6,
+            "lfo_amt": 195,
+            "lfo_waveform": 0,
+
+            "osc1_waveform": 3,
+            "osc1_vol": 192,
             "osc1_oct": 7,
             "osc1_det": 0,
             "osc1_detune": 0,
             "osc1_xenv": 0,
-            "osc1_vol": 192,
-            "osc1_waveform": 3,
+            "lfo_osc1_freq": 0,
+
+            "osc2_waveform": 3,
+            "osc2_vol": 201,
             "osc2_oct": 7,
             "osc2_det": 0,
             "osc2_detune": 7,
             "osc2_xenv": 0,
-            "osc2_vol": 201,
-            "osc2_waveform": 3,
+            
             "noise_fader": 0,
+
             "env_attack": 789,
             "env_sustain": 1234,
             "env_release": 13636,
             "env_master": 191,
+
             "fx_filter": 2,
             "fx_freq": 5839,
             "fx_resonance": 254,
@@ -26,11 +38,8 @@ export default {
             "fx_delay_amt": 121,
             "fx_pan_freq": 6,
             "fx_pan_amt": 147,
-            "lfo_osc1_freq": 0,
-            "lfo_fx_freq": 1,
-            "lfo_freq": 6,
-            "lfo_amt": 195,
-            "lfo_waveform": 0,
+
+
             "p": [
                 1,
                 2,
@@ -879,7 +888,5 @@ export default {
                 }
             ]
         }
-    ],
-    "rowLen": 5513,
-    "endPattern": 9
+    ]
 }

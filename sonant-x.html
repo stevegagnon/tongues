@@ -7,18 +7,44 @@
 </head>
 
 <body>
-  <button id="rendered-play">rendered-play</button>
+  <button id="rendered-play-w">rendered-play-w</button>
+  <button id="rendered-play-x">rendered-play-x</button>
+
   <script type="module">
     import song from './media/sonant-x-song.js';
-    import render from './synth/sonant-x/render.js';
+    import render_x from './synth/sonant-x/render-x.js';
+    import render_w from './synth/sonant-x/render-w.js';
+    import convert from './synth/sonant-x/convert-x.js';
 
     const sampleRate = 44100;
 
-    const play = document.getElementById('rendered-play');
+    const play_w = document.getElementById('rendered-play-w');
+    const play_x = document.getElementById('rendered-play-x');
 
+    play_w.addEventListener('click', () => {
+      const samples = render_w(convert(song), sampleRate);
+      console.log(samples);
 
-    play.addEventListener('click', () => {
-      const samples = render(song, sampleRate);
+      const audioCtx = new AudioContext({ sampleRate });
+      const myArrayBuffer = audioCtx.createBuffer(2, samples[0].length, sampleRate);
+
+      for (let ch = 0; ch < 2; ++ch) {
+        const c = myArrayBuffer.getChannelData(ch);
+        for (let i = 0; i < samples[ch].length; ++i) {
+          c[i] = samples[ch][i];
+        }
+      }
+
+      console.log(myArrayBuffer);
+
+      const source = audioCtx.createBufferSource();
+      source.buffer = myArrayBuffer;
+      source.connect(audioCtx.destination);
+      source.start();
+    });
+
+    play_x.addEventListener('click', () => {
+      const samples = render_x(convert(song), sampleRate);
       console.log(samples);
 
       const audioCtx = new AudioContext({ sampleRate });
