@@ -22,7 +22,6 @@ export default function render(
     v => (v % 1) - .5, // sawtooth
     v => { let v2 = (v % 1) * 4; return v2 < 2 ? v2 - 1 : 3 - v2 }, // triangle
   ];
-  let nf = (n, oct, det, detune) => (0.00390625 * pow(1.059463094, (n + (oct - 8) * 12 + det) - 128)) * (1 + 0.0008 * detune);
 
   for (let [
     [
@@ -30,25 +29,7 @@ export default function render(
       lfo_freq,
       lfo_amt,
       lfo_waveform,
-      [
-        [
-          osc1_waveform,
-          osc1_vol,
-          osc1_oct,
-          osc1_det,
-          osc1_detune,
-          osc1_xenv,
-          lfo_osc1_freq,
-        ],
-        [
-          osc2_waveform,
-          osc2_vol,
-          osc2_oct,
-          osc2_det,
-          osc2_detune,
-          osc2_xenv,
-        ]
-      ],
+      oscp,
       noise_fader,
       env_attack,
       env_sustain,
@@ -69,12 +50,11 @@ export default function render(
     let delay_time = (fx_delay_time * rowLen) >> 1;
     let delay_amt = fx_delay_amt / 255;
     let pan_freq = pow(2, fx_pan_freq - 8) / rowLen;
-    let osc1 = osc[osc1_waveform];
-    let osc2 = osc[osc2_waveform];
+    let oscillators = oscp.map(([waveform, ...p]) => ([osc[waveform], ...p]));
     let lfo_freq_row = pow(2, lfo_freq - 8) / rowLen;
     let lfo = k => osc[lfo_waveform](k * lfo_freq_row) * lfo_amt / 512 + 0.5;
     let pos = 0;
-    
+
     right_buffer.fill(0);
     left_buffer.fill(0);
 
@@ -83,38 +63,35 @@ export default function render(
       if (pattern) {
         for (let n of c[pattern - 1].n) {
           if (n) {
-            let c1 = 0, c2 = 0;
-            let o1t = nf(n, osc1_oct, osc1_det, osc1_detune);
-            let o2t = nf(n, osc2_oct, osc2_det, osc2_detune);
-      
-            for (let j = len - 1; j >= 0; --j) {
-              let k = j + pos;
- 
-              // Envelope
-              let e = 1
-              if (j < env_attack) {
-                e = j / env_attack;
-              } else if (j >= env_attack + env_sustain) {
-                e -= (j - env_attack - env_sustain) / env_release;
+            let oscs = oscillators.map(([osc, osc_vol, oct, det, detune, osc_xenv, lfo_osc_freq]) => {
+              let c = 0;
+              let ot = (0.00390625 * pow(1.059463094, (n + (oct - 8) * 12 + det) - 128)) * (1 + 0.0008 * detune);
+              return (e, lfp) => {
+                let t = ot;
+                if (lfo_osc_freq) t += lfo(lfp);
+                if (osc_xenv) t *= e * e;
+                c += t;
+                return osc(c) * osc_vol;
               }
-      
-              // Oscillator 1
-              let t = o1t;
-              if (lfo_osc1_freq) t += lfo(k);
-              if (osc1_xenv) t *= e * e;
-              c1 += t;
-              let rsample = osc1(c1) * osc1_vol;
-      
-              // Oscillator 2
-              t = o2t;
-              if (osc2_xenv) t *= e * e;
-              c2 += t;
-              rsample += osc2(c2) * osc2_vol;
-      
+            });
+
+            for (let j = len - 1; j >= 0; --j) {
+              let s = 0;
+
+              // Envelope
+              let e = j < env_attack ? j / env_attack
+                : j >= env_attack + env_sustain ? 1 - (j - env_attack - env_sustain) / env_release
+                  : 1;
+
+              
+              for (let osc of oscs) {
+                s += osc(e, j + pos);
+              }
+
               // Noise oscillator
-              if (noise_fader) rsample += (2 * random() - 1) * noise_fader * e;
-      
-              right_buffer[k] += (rsample * e) / 300;
+              if (noise_fader) s += (2 * random() - 1) * noise_fader * e;
+
+              right_buffer[j + pos] += s * e / 512;
             }
           }
           pos += rowLen;

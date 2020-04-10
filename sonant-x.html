@@ -7,70 +7,59 @@
 </head>
 
 <body>
-  <button id="rendered-play-w">rendered-play-w</button>
-  <button id="rendered-play-x">rendered-play-x</button>
+  <button id="rendered-play">rendered-play</button>
+  <button id="rendered-play-closure">rendered-play-closure</button>
+  <button id="rendered-play-wavetable">rendered-play-wavetable</button>
+  <button id="rendered-play-nosin">rendered-play-nosin</button>
 
   <script type="module">
     import song from './media/sonant-x-song.js';
-    import render_x from './synth/sonant-x/render-x.js';
-    import render_w from './synth/sonant-x/render-w.js';
-    import convert from './synth/sonant-x/convert-x.js';
+    import render from './synth/sonant-x/render.js';
+    import render_closure from './synth/sonant-x/render-closure.js';
+    import render_wavetable from './synth/sonant-x/render-wavetable.js';
+    import render_nosin from './synth/sonant-x/render-nosin.js';
+    import convert from './synth/sonant-x/convert.js';
 
-    const sampleRate = 44100;
+    const play = document.getElementById('rendered-play');
+    const play_closure = document.getElementById('rendered-play-closure');
+    const play_wavetable = document.getElementById('rendered-play-wavetable');
+    const play_nosin = document.getElementById('rendered-play-nosin');
 
-    const play_w = document.getElementById('rendered-play-w');
-    const play_x = document.getElementById('rendered-play-x');
+    play.addEventListener('click', play_with(convert(song, { removeMutedOsc: false }), render));
+    play_closure.addEventListener('click', play_with(convert(song), render_closure));
+    play_wavetable.addEventListener('click', play_with(convert(song, { removeMutedOsc: false }), render_wavetable));
+    play_nosin.addEventListener('click', play_with(convert(song, { removeMutedOsc: false }), render_nosin));
 
-    play_w.addEventListener('click', () => {
-      const samples = render_w(convert(song, {removeMutedOsc: false}), sampleRate);
 
-      const audioCtx = new AudioContext({ sampleRate });
-      const myArrayBuffer = audioCtx.createBuffer(2, samples[0].length, sampleRate);
+    function play_with(song, render) {
+      return () => {
+        const sampleRate = 44100;
+        const samples = render(song, sampleRate);
 
-      let min = Infinity;
-      let max = -Infinity;
+        const audioCtx = new AudioContext({ sampleRate });
+        const myArrayBuffer = audioCtx.createBuffer(2, samples[0].length, sampleRate);
 
-      for (let ch = 0; ch < 2; ++ch) {
-        const c = myArrayBuffer.getChannelData(ch);
-        for (let i = 0; i < samples[ch].length; ++i) {
-          const s = samples[ch][i];
-          if (s < min) min = s;
-          if (s > max) max = s;
-          c[i] = s;
+        let min = Infinity;
+        let max = -Infinity;
+
+        for (let ch = 0; ch < 2; ++ch) {
+          const c = myArrayBuffer.getChannelData(ch);
+          for (let i = 0; i < samples[ch].length; ++i) {
+            const s = samples[ch][i];
+            if (s < min) min = s;
+            if (s > max) max = s;
+            c[i] = s;
+          }
         }
+
+        console.log(min, max);
+
+        const source = audioCtx.createBufferSource();
+        source.buffer = myArrayBuffer;
+        source.connect(audioCtx.destination);
+        source.start();
       }
-
-      console.log(min, max);
-      
-      const source = audioCtx.createBufferSource();
-      source.buffer = myArrayBuffer;
-      source.connect(audioCtx.destination);
-      source.start();
-    });
-
-    play_x.addEventListener('click', () => {
-      const s0 = convert(song);
-
-      console.log(JSON.stringify(s0));
-      
-      const samples = render_x(s0, sampleRate);
-
-      const audioCtx = new AudioContext({ sampleRate });
-      const myArrayBuffer = audioCtx.createBuffer(2, samples[0].length, sampleRate);
-
-      for (let ch = 0; ch < 2; ++ch) {
-        const c = myArrayBuffer.getChannelData(ch);
-        for (let i = 0; i < samples[ch].length; ++i) {
-          c[i] = samples[ch][i];
-        }
-      }
-
-      const source = audioCtx.createBufferSource();
-      source.buffer = myArrayBuffer;
-      source.connect(audioCtx.destination);
-      source.start();
-    });
-
+    }
   </script>
 </body>
 
