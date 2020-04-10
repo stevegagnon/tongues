@@ -88,7 +88,6 @@ export default function render(
             : j >= env_attack + env_sustain ? 1 - (j - env_attack - env_sustain) / env_release
               : 1;
 
-
           let s = oscs.reduce((a, c) => a + c(e, j + pos), 0);
 
           // Noise oscillator

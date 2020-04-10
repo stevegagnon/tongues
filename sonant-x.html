@@ -22,21 +22,26 @@
     const play_x = document.getElementById('rendered-play-x');
 
     play_w.addEventListener('click', () => {
-      const samples = render_w(convert(song), sampleRate);
-      console.log(samples);
+      const samples = render_w(convert(song, {removeMutedOsc: false}), sampleRate);
 
       const audioCtx = new AudioContext({ sampleRate });
       const myArrayBuffer = audioCtx.createBuffer(2, samples[0].length, sampleRate);
 
+      let min = Infinity;
+      let max = -Infinity;
+
       for (let ch = 0; ch < 2; ++ch) {
         const c = myArrayBuffer.getChannelData(ch);
         for (let i = 0; i < samples[ch].length; ++i) {
-          c[i] = samples[ch][i];
+          const s = samples[ch][i];
+          if (s < min) min = s;
+          if (s > max) max = s;
+          c[i] = s;
         }
       }
 
-      console.log(myArrayBuffer);
-
+      console.log(min, max);
+      
       const source = audioCtx.createBufferSource();
       source.buffer = myArrayBuffer;
       source.connect(audioCtx.destination);
@@ -44,8 +49,11 @@
     });
 
     play_x.addEventListener('click', () => {
-      const samples = render_x(convert(song), sampleRate);
-      console.log(samples);
+      const s0 = convert(song);
+
+      console.log(JSON.stringify(s0));
+      
+      const samples = render_x(s0, sampleRate);
 
       const audioCtx = new AudioContext({ sampleRate });
       const myArrayBuffer = audioCtx.createBuffer(2, samples[0].length, sampleRate);
@@ -56,8 +64,6 @@
           c[i] = samples[ch][i];
         }
       }
-
-      console.log(myArrayBuffer);
 
       const source = audioCtx.createBufferSource();
       source.buffer = myArrayBuffer;
