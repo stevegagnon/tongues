@@ -17,7 +17,7 @@ export default function render(
   let right_buffer = create_buffer(sample_count);
   let left_buffer = create_buffer(sample_count);
   let osc = [
-    v => sin(v * 6.283184), // sine
+    v => { let v2 = (v % 1) * 4; return v2 < 2 ? v2 - 1 : 3 - v2 }, // triangle
     v => (v % 1) < 0.5 ? 1 : -1, // square
     v => (v % 1) - .5, // sawtooth
     v => { let v2 = (v % 1) * 4; return v2 < 2 ? v2 - 1 : 3 - v2 }, // triangle
