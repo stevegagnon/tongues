@@ -22,14 +22,20 @@ export default function render(
   let sqr_wt = create_buffer(wt_size);
   let saw_wt = create_buffer(wt_size);
   let tri_wt = create_buffer(wt_size);
-  
+
+  const oscfn = [
+    v => sin(v * 6.283184), // sine
+    v => (v % 1) < 0.5 ? 1 : -1, // square
+    v => (v % 1) - .5, // sawtooth
+    v => { let v2 = (v % 1) * 4; return v2 < 2 ? v2 - 1 : 3 - v2 }, // triangle
+  ];
+
   for (let i = 0; i < wt_size; ++i) {
     let v = i / wt_size;
-    let v2 = (v % 1) * 4;
-    sin_wt[i] = sin(v * 6.283184);
-    sqr_wt[i] = (v % 1) < 0.5 ? 1 : -1;
-    saw_wt[i] = (v % 1) - .5;
-    tri_wt[i] = v2 < 2 ? v2 - 1 : 3 - v2;
+    sin_wt[i] = oscfn[0](v);
+    sqr_wt[i] = oscfn[1](v);
+    saw_wt[i] = oscfn[2](v);
+    tri_wt[i] = oscfn[3](v);
   }
 
   let osc = [
@@ -88,13 +94,17 @@ export default function render(
     let pan_freq = pow(2, fx_pan_freq - 8) / rowLen * wt_size;
     let wt1 = osc[osc1_waveform];
     let wt2 = osc[osc2_waveform];
-    let lfo_freq_row = pow(2, lfo_freq - 8) / rowLen * wt_size;
-    let lfo = k => osc[lfo_waveform][(k * lfo_freq_row) & wt_mask] * lfo_amt / 512 + 0.5;
+    let lfo_freq_row = pow(2, lfo_freq - 8) / rowLen;
     let mv = env_master / 255 / 512;
     let pos = 0;
+    // let lfofn = k => oscfn[lfo_waveform](k * lfo_freq_row) * lfo_amt / 512 + 0.5;
 
     right_buffer.fill(0);
-    left_buffer.fill(0);
+
+    for (let k = 0; k < sample_count; ++k) {
+      //left_buffer[k] = osc[lfo_waveform][(k * lfo_freq_row * wt_size) & wt_mask] * lfo_amt / 512 + 0.5;
+      left_buffer[k] = oscfn[lfo_waveform](k * lfo_freq_row) * lfo_amt / 512 + 0.5;
+    }
 
     for (let pattern of p) {
       let rows = 32;
@@ -115,7 +125,7 @@ export default function render(
 
               // Oscillator 1
               let t = o1t;
-              if (lfo_osc1_freq) t += lfo(k);
+              if (lfo_osc1_freq) t += left_buffer[k];
               if (osc1_xenv) t *= e * e;
               c1 += t;
               let rsample = wt1[c1 & wt_mask] * osc1_vol;
@@ -149,7 +159,7 @@ export default function render(
 
       // State variable filter
       let f = fx_freq;;
-      if (lfo_fx_freq) f *= lfo(k);
+      if (lfo_fx_freq) f *= left_buffer[k];
       f = 1.5 * sin(f * 3.141592 / SAMPLE_RATE);
       low += f * band;
       let high = q * (s - band) - low;
