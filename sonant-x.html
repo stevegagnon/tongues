@@ -39,20 +39,8 @@
         const audioCtx = new AudioContext({ sampleRate });
         const myArrayBuffer = audioCtx.createBuffer(2, samples[0].length, sampleRate);
 
-        let min = Infinity;
-        let max = -Infinity;
-
-        for (let ch = 0; ch < 2; ++ch) {
-          const c = myArrayBuffer.getChannelData(ch);
-          for (let i = 0; i < samples[ch].length; ++i) {
-            const s = samples[ch][i];
-            if (s < min) min = s;
-            if (s > max) max = s;
-            c[i] = s;
-          }
-        }
-
-        console.log(min, max);
+        myArrayBuffer.copyToChannel(samples[0], 0);
+        myArrayBuffer.copyToChannel(samples[1], 1);
 
         const source = audioCtx.createBufferSource();
         source.buffer = myArrayBuffer;

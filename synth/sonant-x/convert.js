@@ -74,8 +74,6 @@ export default function convert_json(
         ]);
       }
 
-      console.log(oscillators);
-      
       return [
         [
           lfo_fx_freq,
