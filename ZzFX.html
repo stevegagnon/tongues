@@ -12,14 +12,19 @@
   <button id="play3">play3</button>
 
   <script type="module">
-    import zzfx from './synth/ZzFX/index.js';
+    import { R2, Z2 } from './synth/ZzFX/index.js';
 
     const sampleRate = 44100;
     let audioCtx;
 
-    document.getElementById('play1').addEventListener('click', () => play(1, .05, 78, .6, .08, 0, .2, 2.8, .11));
-    document.getElementById('play2').addEventListener('click', () => play(1, .05, 10, .2, .58, 2.9, .1, 32.5, .6));
-    document.getElementById('play3').addEventListener('click', () => play(1, .05, 333, 1, .07, 2.5, 1.9, .4, .07));
+    const
+      S1 = R2(),
+      S2 = R2(),
+      S3 = R2();
+
+    document.getElementById('play1').addEventListener('click', () => play(S1));
+    document.getElementById('play2').addEventListener('click', () => play(S2));
+    document.getElementById('play3').addEventListener('click', () => play(S3));
 
 
     function getAudioCtx() {
@@ -29,12 +34,10 @@
       return audioCtx;
     }
 
-    function play(...args) {
+    function play(args) {
       console.log(args);
 
-
-      const samples = zzfx(...args);
-
+      const samples = Z2(...args);
 
       const audioCtx = getAudioCtx();
 
