@@ -12,15 +12,15 @@
   <button id="play3">play3</button>
 
   <script type="module">
-    import { R2, Z2 } from './synth/ZzFX/index.js';
+    import { default as ZzFX, ZzFX_r } from './synth/ZzFX/index.js';
 
     const sampleRate = 44100;
     let audioCtx;
 
     const
-      S1 = R2(),
-      S2 = R2(),
-      S3 = R2();
+      S1 = ZzFX_r(),
+      S2 = ZzFX_r(),
+      S3 = ZzFX_r();
 
     document.getElementById('play1').addEventListener('click', () => play(S1));
     document.getElementById('play2').addEventListener('click', () => play(S2));
@@ -37,7 +37,7 @@
     function play(args) {
       console.log(args);
 
-      const samples = Z2(...args);
+      const samples = ZzFX(...args);
 
       const audioCtx = getAudioCtx();
 

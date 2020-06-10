@@ -1,6 +1,6 @@
 // https://zzfx.3d2k.com/
 
-export function Z1(
+export function ZzFX_old(
   volume,
   randomness,
   frequency,
@@ -36,7 +36,7 @@ export function Z1(
   return b;
 }
 
-export function Z2(
+export default function ZzFX(
   volume = 1,
   randomness = .05,
   frequency = 220,
@@ -58,12 +58,11 @@ export function Z2(
 ) {
   // init parameters
   const PI2 = Math.PI * 2;
-  const random = r => r * (Math.random() * 2 - 1);
+  const random = r => 1 + r * (Math.random() * 2 - 1);
   const sign = v => v > 0 ? 1 : -1;
   const startSlide = slide *= 500 * PI2 / sampleRate ** 2;
   const modPhase = sign(modulation) * PI2 / 4
-  let startFrequency = frequency *=
-    (1 + random(randomness)) * PI2 / sampleRate;
+  let startFrequency = frequency *= random(randomness) * PI2 / sampleRate;
   attack = 99 + attack * sampleRate | 0;
   sustain = sustain * sampleRate | 0;
   release = release * sampleRate | 0;
@@ -78,11 +77,9 @@ export function Z2(
   // generate waveform
   let b = [], t = 0, tm = 0, i = 0, j = 1, r = 0, c = 0, s = 0, d = .5;
   for (; i < length; b[i++] = s) {
-    if (++c > bitCrush * 100)                          // bit crush
-    {
+    if (++c > bitCrush * 100 /* bit crush */) {
       c = 0;
-      s = t * frequency *                        // frequency
-        Math.sin(tm * modulation - modPhase);  // modulation
+      s = t * frequency * Math.sin(tm * modulation - modPhase);  // modulation
 
       s = shape ? shape > 1 ? shape > 2 ? shape > 3 ?   // wave shape
         Math.sin((s % PI2) ** 3) :                // 4 noise
@@ -104,8 +101,8 @@ export function Z2(
           b[i - delay] / 2) : s;
     }
 
-    t += 1 + random(noise);                      // noise
-    tm += 1 + random(noise);                     // modulation noise
+    t += random(noise);                      // noise
+    tm += random(noise);                     // modulation noise
     frequency += slide += deltaSlide;            // frequency slide
 
     if (j && ++j > pitchJumpTime)                // pitch jump
@@ -128,7 +125,7 @@ export function Z2(
 }
 
 
-export function R2() {
+export function ZzFX_r() {
   let
     R = Math.random,
     attack = .01 + R() ** 3,

@@ -18,45 +18,66 @@ function buffer_size_for_sample_rate(sample_rate) {
   }
 }
 
-export function reverb(param, sample_rate) {
+export function reverb(
+  max_decay,
+  delayadd,
+  filterlow,
+  filterhigh,
+  dampenlow,
+  dampenhigh,
+  delaymin,
+  delaymax,
+  seed,
+  nbufs,
+  volumes,
+  decay_mul,
+  sample_rate,
+  outputs,
+  inputs,
+) {
   let filter = (a, i, value, strength) => {
     const c = a[i];
     a[i] = c + (value - c) * strength;
     return a[i];
   }
 
+  let fhstate = [];
+  let flstate = [];
+  let dhstate = [];
+  let dlstate = [];
+
   let buffer_size = buffer_size_for_sample_rate(sample_rate);
   let buffer_index = 0;
 
   let delay_buffers = [];
   let random_data = generate_random_data(NOISESIZE * NOISESIZE * NOISESIZE);
-  let feedback = param.max_decay;
+  let feedback = max_decay;
   let b = 0;
 
   let sample_rate_scale = sample_rate / BASE_SAMPLE_RATE;
-  let scaled_delayadd = Math.round(param.delayadd * sample_rate_scale);
+  let scaled_delayadd = Math.round(delayadd * sample_rate_scale);
   // Heuristic adjustment of filter coefficients to sort of compensate for sample rate.
   // Hits the frequency content pretty well, but still gives variation in decay time.
-  let scaled_filterlow = Math.pow(param.filterlow, Math.sqrt(sample_rate_scale));
-  let scaled_filterhigh = Math.pow(param.filterhigh, Math.sqrt(sample_rate_scale));
-  let scaled_dampenlow = Math.pow(param.dampenlow, Math.sqrt(sample_rate_scale));
-  let scaled_dampenhigh = Math.pow(param.dampenhigh, Math.sqrt(sample_rate_scale));
+  let scaled_filterlow = Math.pow(filterlow, Math.sqrt(sample_rate_scale));
+  let scaled_filterhigh = Math.pow(filterhigh, Math.sqrt(sample_rate_scale));
+  let scaled_dampenlow = Math.pow(dampenlow, Math.sqrt(sample_rate_scale));
+  let scaled_dampenhigh = Math.pow(dampenhigh, Math.sqrt(sample_rate_scale));
   
   return (buffer) => {
     let size = buffer.length;
 
-    for (let delay = param.delaymin+1; delay < param.delaymax+1; ++delay) {
-			let random = random_data[param.seed + delay];
+    for (let delay = delaymin+1; delay < delaymax+1; ++delay) {
+			let random = random_data[seed + delay];
       // Is there an echo with this delay?
       // FIX: this depends on 64 bit ints. need make work with 32
-			if ((random * (delay - param.delaymin)) >> 32 < (param.nbufs - b)) {
+			if ((random * (delay - delaymin)) >> 32 < (nbufs - b)) {
 				let scaled_delay = Math.round(delay * sample_rate_scale);
         let c = b & 1;
         for (let i = 0; i < size; ++i) {
 					// Extract delayed signal
 					let out_index = (buffer_index + i - scaled_delay - scaled_delayadd) & (buffer_size - 1);
 					let out = delay_buffers[b][out_index];
-					outputs[c][i] += out * param.volumes[c];
+					outputs[c][i] += out * volumes[c];
 
 					// Filter input
 					let input = inputs[c][i];
@@ -79,7 +100,7 @@ export function reverb(param, sample_rate) {
 				b += 1;
 			}
 
-			feedback *= param.decay_mul;
+			feedback *= decay_mul;
 		}
 
 		buffer_index += size;
