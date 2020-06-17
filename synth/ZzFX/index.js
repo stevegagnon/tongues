@@ -57,12 +57,13 @@ export default function ZzFX(
   sampleRate = 44100
 ) {
   // init parameters
-  const PI2 = Math.PI * 2;
-  const random = r => 1 + r * (Math.random() * 2 - 1);
-  const sign = v => v > 0 ? 1 : -1;
-  const startSlide = slide *= 500 * PI2 / sampleRate ** 2;
-  const modPhase = sign(modulation) * PI2 / 4
-  let startFrequency = frequency *= random(randomness) * PI2 / sampleRate;
+  let { PI, random, min, max, sin, tan, abs, round } = Math;
+  let PI2 = PI * 2;
+  let rnd = r => 1 + r * (random() * 2 - 1);
+  let sign = v => v > 0 ? 1 : -1;
+  let startSlide = slide *= 500 * PI2 / sampleRate ** 2;
+  let modPhase = sign(modulation) * PI2 / 4
+  let startFrequency = frequency *= rnd(randomness) * PI2 / sampleRate;
   attack = 99 + attack * sampleRate | 0;
   sustain = sustain * sampleRate | 0;
   release = release * sampleRate | 0;
@@ -72,22 +73,22 @@ export default function ZzFX(
   pitchJump *= PI2 / sampleRate;
   pitchJumpTime = pitchJumpTime * sampleRate;
   repeatTime = repeatTime * sampleRate;
-  const length = Math.max(1, Math.min(attack + sustain + release + delay, sampleRate * 10));
+  let length = max(1, min(attack + sustain + release + delay, sampleRate * 10));
 
   // generate waveform
   let b = [], t = 0, tm = 0, i = 0, j = 1, r = 0, c = 0, s = 0, d = .5;
   for (; i < length; b[i++] = s) {
     if (++c > bitCrush * 100 /* bit crush */) {
       c = 0;
-      s = t * frequency * Math.sin(tm * modulation - modPhase);  // modulation
+      s = t * frequency * sin(tm * modulation - modPhase);  // modulation
 
       s = shape ? shape > 1 ? shape > 2 ? shape > 3 ?   // wave shape
-        Math.sin((s % PI2) ** 3) :                // 4 noise
-        Math.max(Math.min(Math.tan(s), 1), -1) : // 3 tan
+        sin((s % PI2) ** 3) :                // 4 noise
+        max(min(tan(s), 1), -1) : // 3 tan
         1 - (2 * s / PI2 % 2 + 2) % 2 :                    // 2 saw
-        1 - 4 * Math.abs(Math.round(s / PI2) - s / PI2) :// 1 triangle
-        Math.sin(s);                          // 0 sin
-      s = sign(s) * (Math.abs(s) ** shapeCurve);  // curve 0=square, 2=pointy
+        1 - 4 * abs(round(s / PI2) - s / PI2) :// 1 triangle
+        sin(s);                          // 0 sin
+      s = sign(s) * (abs(s) ** shapeCurve);  // curve 0=square, 2=pointy
 
       s *= volume * (                // envelope
         i < attack ? i / attack :                    // attack
@@ -101,8 +102,8 @@ export default function ZzFX(
           b[i - delay] / 2) : s;
     }
 
-    t += random(noise);                      // noise
-    tm += random(noise);                     // modulation noise
+    t += rnd(noise);                      // noise
+    tm += rnd(noise);                     // modulation noise
     frequency += slide += deltaSlide;            // frequency slide
 
     if (j && ++j > pitchJumpTime)                // pitch jump
@@ -123,7 +124,6 @@ export default function ZzFX(
 
   return b;
 }
-
 
 export function ZzFX_r() {
   let

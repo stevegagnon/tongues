@@ -1,0 +1,57 @@
+<!doctype html>
+
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+</head>
+
+<body>
+  <button id="start">start</button>
+  <button id="play">play</button>
+
+  <script type="module">
+    import drum from './synth/drum/index.js';
+
+
+    const sampleRate = 44100;
+    let audioCtx;
+
+    let last;
+
+    const [render, instr] = drum();
+
+    const i1 = instr();
+
+    document.getElementById('start').addEventListener('click', () => {
+      if (!audioCtx) {
+        audioCtx = new AudioContext();
+        let scriptNode = audioCtx.createScriptProcessor(1024, 2, 2);
+        scriptNode.connect(audioCtx.destination);
+
+
+        scriptNode.onaudioprocess = ({ inputBuffer, outputBuffer }) => {
+
+            let inputData = inputBuffer.getChannelData(0);
+            let c1 = outputBuffer.getChannelData(0);
+            let c2 = outputBuffer.getChannelData(1);
+
+            for (let i = 0; i < inputData.length; ++i) {
+              c1[i] = 0;
+              c2[i] = 0;
+            }
+
+            render(c1, c2, inputBuffer.length);
+        }
+      }
+    });
+
+    document.getElementById('play').addEventListener('click', () => {
+      i1(150);
+    });
+
+
+  </script>
+</body>
+
+</html>
