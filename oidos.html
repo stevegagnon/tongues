@@ -12,7 +12,7 @@
   <button id="play3">play3</button>
 
   <script type="module">
-    import { default_values, random_values } from './synth/oidos/util.js';
+    import { default_values, random_values, scale_values } from './synth/oidos/util.js';
     import oidos from './synth/oidos/synth.js';
 
 
@@ -21,14 +21,18 @@
     let last;
 
     document.getElementById('play1').addEventListener('click', () => {
-      last = random_values(400);
+      last = scale_values(default_values(55));
       play(...last);
     });
 
     document.getElementById('play2').addEventListener('click', () => {
+      last = scale_values(random_values(55));
       play(...last);
     });
 
+    document.getElementById('play3').addEventListener('click', () => {
+      play(...last);
+    });
 
     function getAudioCtx() {
       if (!audioCtx) {

@@ -21,7 +21,17 @@
 
     const [render, instr] = drum();
 
-    const i1 = instr();
+    const i1 = instr([
+          [
+            [1, 0, 0, .5, 44, 222, 3, .1]
+          ],
+          .9,
+          88,
+          0,
+          1,
+          0,
+          1
+        ]);
 
     document.getElementById('start').addEventListener('click', () => {
       if (!audioCtx) {
@@ -47,7 +57,7 @@
     });
 
     document.getElementById('play').addEventListener('click', () => {
-      i1(150);
+      i1(66);
     });
 
 
