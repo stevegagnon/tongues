@@ -39,6 +39,7 @@ export default function ({
     let ENV_ATTACK;
     let ENV_SUSTAIN;
     let ENV_RELEASE;
+    let ENV_EXP_DECAY;
     let ARP_CHORD;
     let ARP_SPEED;
     let LFO_WAVEFORM;
@@ -59,16 +60,17 @@ export default function ({
       v => OSC1_WAVEFORM = osc[v],
       v => OSC1_VOL = v,
       v => OSC1_SEMI = v,
-      v => OSC1_XENV = v,
+      v => OSC1_XENV = v/32,
       v => OSC2_WAVEFORM = osc[v],
       v => OSC2_VOL = v,
       v => OSC2_SEMI = v,
-      v => OSC2_DETUNE = v,
-      v => OSC2_XENV = v,
+      v => OSC2_DETUNE = 1 + 0.0008 * v,
+      v => OSC2_XENV = v/32,
       v => NOISE_VOL = v,
       v => ENV_ATTACK = v * v * 4,
       v => ENV_SUSTAIN = v * v * 4,
       v => ENV_RELEASE = v * v * 4,
+      v => ENV_EXP_DECAY = v / 16,
       v => ARP_CHORD = v,
       v => ARP_SPEED = pow(2, 2 - v) * rowLen,
       v => LFO_WAVEFORM = osc[v],
@@ -78,7 +80,7 @@ export default function ({
       v => FX_FILTER = v,
       v => FX_FREQ = v * 43.23529 * 3.141592 / 44100,
       v => FX_RESONANCE = 1 - v / 255,
-      v => FX_DIST = v * 0.2056,
+      v => FX_DIST = v * 0.32767,
       v => FX_DRIVE = v / 32,
       v => FX_PAN_AMT = v / 512,
       v => FX_PAN_FREQ = 6.283184 * pow(2, v - 9) / rowLen,
@@ -95,7 +97,7 @@ export default function ({
           let ch = channel.c[pattern - 1];
           let cmd = ch.f[row];
           if (cmd) {
-            if (cmd < 16) noteCache.clear();
+            if (cmd < 17) noteCache.clear();
             tva[cmd - 1](ch.f[row + patternLen] | 0);
           }
 
@@ -107,7 +109,7 @@ export default function ({
 
               if (!noteBuf) {
                 let len = ENV_ATTACK + ENV_SUSTAIN + ENV_RELEASE;
-                let releaseInv = ENV_RELEASE === 0 ? 0 : 1 / ENV_RELEASE;
+                let releaseInv = 1 / ENV_RELEASE;
                 let c1 = 0;
                 let c2 = 0;
                 let o1t = 0;
@@ -121,16 +123,30 @@ export default function ({
                   if (arpT >= 0) {
                     arp = (arp >> 8) | ((arp & 255) << 4);
                     arpT -= ARP_SPEED;
-                    let _arp = note + (arp & 15) - 128;
-                    o1t = 0.00396 * pow(2, (_arp + OSC1_SEMI - 128) / 12);
-                    o2t = 0.00396 * pow(2, (_arp + OSC2_SEMI - 128) / 12) * (1 + 0.0008 * OSC2_DETUNE);
+                    let _arp = note + (arp & 15) - 256;
+                    o1t = 0.00396 * (2 ** ((_arp + OSC1_SEMI) / 12));
+                    o2t = 0.00396 * (2 ** ((_arp + OSC2_SEMI) / 12)) * OSC2_DETUNE;
                   }
-                  let e = T < ENV_ATTACK ? T / ENV_ATTACK
-                    : T >= ENV_ATTACK + ENV_SUSTAIN ? 1 - (T - ENV_ATTACK - ENV_SUSTAIN) * releaseInv
-                      : 1;
+                  // let e = T < ENV_ATTACK ? T / ENV_ATTACK
+                  //   : T >= ENV_ATTACK + ENV_SUSTAIN ? 1 - (T - ENV_ATTACK - ENV_SUSTAIN) * releaseInv
+                  //     : 1;
 
-                  c1 += OSC1_XENV ? o1t * e * e : o1t;
-                  c2 += OSC2_XENV ? o2t * e * e : o2t;
+                      let e = 1;
+                      if (T < ENV_ATTACK) {
+                          e = T / ENV_ATTACK;
+                      } else if (T >= ENV_ATTACK + ENV_SUSTAIN) {
+                          e = (T - ENV_ATTACK - ENV_SUSTAIN) * releaseInv;
+                          e = (1 - e) * (3 ** (ENV_EXP_DECAY * e));
+                      }
+
+                                  // Oscillator 1
+                      c1 += o1t * e ** OSC1_XENV;
+
+                      // Oscillator 2
+                      c2 += o2t * e ** OSC2_XENV;
+
+                  // c1 += OSC1_XENV ? o1t * e * e : o1t;
+                  // c2 += OSC2_XENV ? o2t * e * e : o2t;
 
                   let sample = OSC1_WAVEFORM(c1) * OSC1_VOL + OSC2_WAVEFORM(c2) * OSC2_VOL;
 
@@ -138,7 +154,9 @@ export default function ({
                     sample += (2 * random() - 1) * NOISE_VOL;
                   }
 
-                  noteBuf[T] = sample * e * 1/255;
+                  noteBuf[T] = sample * e * 0.0025;
+
+                  //noteBuf[T] = (((sample * e * 0.0025) * 80) | 0) / 80;
                 }
 
                 noteCache.set(note, noteBuf);
